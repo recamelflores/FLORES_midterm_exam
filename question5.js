@@ -1,40 +1,61 @@
 const express = require('express');
-const User = require('./models/User'); // Import the User model
-const sequelize = require('./database/db'); // Import the sequelize instance
-
 const app = express();
-const port = 3000;
+const { Sequelize, DataTypes } = require('sequelize');
+const mysql = require('mysql2/promise');
 
-// Test database connection and sync models
-sequelize.authenticate()
-  .then(() => {
-    console.log('Database connection has been established successfully.');
-    return sequelize.sync(); // Sync all defined models to the DB
-  })
-  .then(() => {
-    console.log('Database synchronized.');
-  })
-  .catch(err => {
-    console.error('Unable to connect to the database:', err);
-  });
+const db = {};
 
-// Route to fetch all users
-app.get('/users', async (req, res) => {
-  try {
-    const users = await User.findAll(); // Fetch all users from the database
-    res.json(users);
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
+// GET request
+app.get('/users', (req, res) => {
+    db.User.findAll()
+        .then(users => res.json(users))
+        .catch(err => res.status(500).json({ message: err.message }));
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'An unexpected error occurred' });
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+
+
+//User model
+function model(sequelize) {
+    //define the attributes for the User model
+    const attributes = {
+        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
+        name: { type: DataTypes.STRING, allowNull: false},
+        email: { type: DataTypes.STRING, allowNull: false},
+        status: {type: DataTypes.STRING, allowNull: false},
+    };
+
+    return sequelize.define('User', attributes);
+}
+
+
+//initialize the database
+async function initialize() {
+
+    //define the database credentials
+    const host = 'localhost';
+    const port = 3306;
+    const user = 'root';
+    const password = '';
+    const database = 'user';
+
+    //create the database if it doesn't exist
+    const connection = await mysql.createConnection ({ host, port, user, password });
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\`;`);
+
+    //create a new Sequelize instance
+    const sequelize = new Sequelize(database, user, password, { dialect: 'mysql' });
+
+    //define the User model
+    db.User = model(sequelize);
+
+    //sync the model with the database
+    await sequelize.sync({ alter: true });
+}
+
+//run the initialize function
+initialize();
