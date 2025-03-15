@@ -1,7 +1,6 @@
-//Write a JavaScript function named reverseString that takes a string as an argument and returns the reversed string
-
-function reverse(s) {
-    return s.split("").reverse().join("");
-    }
-    
-    console.log(reverse("hello world"));
+function sumArray(arr) {
+    return arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+  }
+  
+  console.log(sumArray([1, 2, 3, 4, 5])); // Output: 15
+  
